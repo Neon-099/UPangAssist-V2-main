@@ -1,35 +1,60 @@
-const app = express();
+const express = require("express");
+const helmet = require("helmet");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
 
-const frontendOrigin =
-  process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const authRoutes = require("./routes/authRoutes");
+const taskRoutes = require("./routes/taskRoutes");
+// const adminRoutes = require("./routes/adminRoutes");
+const chatRoutes = require("./routes/chatRoutes");
+const healthRoutes = require("./routes/healthRoutes");
 
-app.disable("x-powered-by");
+const {
+  globalLimiter
+} = require("./middlewares/rateLimitMiddleware");
 
-app.use((req, res, next) => {
-  // res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  if (req.method === "OPTIONS") return res.sendStatus(204);
-  next();
-});
+const {
+  notFoundMiddleware,
+  errorMiddleware
+} = require("./middlewares/errorMiddleware");
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: {
-      policy: "cross-origin"
-    }
-  })
-);
+function createApp(config) {
+  const app = express();
 
-app.use(express.json({ limit: "20kb" }));
-app.use(cookieParser());
+  app.disable("x-powered-by");
 
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: {
+        policy: "cross-origin"
+      }
+    })
+  );
 
-app.use(
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 300,
-    standardHeaders: "draft-8",
-    legacyHeaders: false
-  })
-);
+  app.use(
+    cors({
+      origin: config.frontendOrigin,
+      credentials: true,
+      methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type"]
+    })
+  );
+
+  app.use(express.json({ limit: "20kb" }));
+  app.use(cookieParser());
+  app.use(globalLimiter);
+
+  app.use("/api/health", healthRoutes);
+  app.use("/api/auth", authRoutes);
+  app.use("/api/tasks", taskRoutes);
+  app.use("/api/chat", chatRoutes);
+
+  app.use(notFoundMiddleware);
+  app.use(errorMiddleware);
+
+  return app;
+}
+
+module.exports = {
+  createApp
+};
