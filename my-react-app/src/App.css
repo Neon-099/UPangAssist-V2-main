@@ -16,6 +16,111 @@
   position: relative;
 }
 
+.task-panel {
+  width: min(760px, 100%);
+  margin: 0 auto 24px;
+  padding: 20px;
+  border: 1px solid rgba(223, 158, 40, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
+}
+
+.task-form {
+  display: grid;
+  gap: 10px;
+}
+
+.task-form-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.task-form-heading h3 {
+  margin: 0;
+  color: #173826;
+}
+
+.task-form-heading span,
+.task-empty-state {
+  color: #647267;
+  font-size: 0.9rem;
+}
+
+.task-form input,
+.task-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #c8d2ca;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+  resize: vertical;
+}
+
+.task-form button,
+.task-item > button {
+  width: fit-content;
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 14px;
+  background: #173826;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.task-form button:disabled,
+.task-item > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.task-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px;
+  border: 1px solid #d9e0da;
+  border-radius: 8px;
+}
+
+.task-item label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.task-item label span {
+  display: grid;
+  gap: 4px;
+}
+
+.task-item small {
+  color: #647267;
+  overflow-wrap: anywhere;
+}
+
+.task-completed strong {
+  color: #718078;
+  text-decoration: line-through;
+}
+
+.task-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
 /* --------------------------------------------------------------------------
    Sidebar & Navigation Drawer
    -------------------------------------------------------------------------- */

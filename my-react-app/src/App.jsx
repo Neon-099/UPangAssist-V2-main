@@ -2,8 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import upangLogo from './assets/upang logo.png'
 import './App.css'
 import { apiBaseUrl, apiRequest } from './services/apiClient'
+import { createTask, deleteTask, getTasks, updateTask } from './services/taskApi'
 import LoginPage from './components/auth/LoginPage'
 import SignupPage from './components/auth/SignupPage'
+import TaskForm from './components/tasks/TaskForm'
+import TaskList from './components/tasks/TaskList'
 
 
 const quickPrompts = [
@@ -86,6 +89,9 @@ export default function App() {
 
   const [currentUser, setCurrentUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [tasks, setTasks] = useState([])
+  const [tasksLoading, setTasksLoading] = useState(false)
+  const [tasksOpen, setTasksOpen] = useState(false)
   
   const chatEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -128,6 +134,31 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!currentUser) return
+
+    let cancelled = false
+
+    async function loadTasks() {
+      setTasksLoading(true)
+
+      try {
+        const data = await getTasks()
+        if (!cancelled) setTasks(Array.isArray(data) ? data : [])
+      } catch (error) {
+        if (!cancelled) console.error('Task loading error:', error)
+      } finally {
+        if (!cancelled) setTasksLoading(false)
+      }
+    }
+
+    loadTasks()
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentUser])
+
     const handleLogout = async () => {
     try {
       await apiRequest('/auth/logout', {
@@ -136,8 +167,30 @@ export default function App() {
     } finally {
       setCurrentUser(null)
       setMessages([])
+      setTasks([])
       setView('login')
     }
+  }
+
+  const handleCreateTask = async (payload) => {
+    const task = await createTask(payload)
+    setTasks((currentTasks) => [task, ...currentTasks])
+  }
+
+  const handleUpdateTask = async (id, payload) => {
+    const task = await updateTask(id, payload)
+    setTasks((currentTasks) =>
+      currentTasks.map((currentTask) =>
+        currentTask._id === id ? task : currentTask
+      )
+    )
+  }
+
+  const handleDeleteTask = async (id) => {
+    await deleteTask(id)
+    setTasks((currentTasks) =>
+      currentTasks.filter((currentTask) => currentTask._id !== id)
+    )
   }
 
   const handleSendMessage = async (textToSend) => {
@@ -440,6 +493,14 @@ export default function App() {
           </div>
 
           <div className="topbar-right">
+            <button
+              className="reset-chat-btn"
+              type="button"
+              onClick={() => setTasksOpen((open) => !open)}
+              title="Show or hide study tasks"
+            >
+              {tasksOpen ? 'Hide Tasks' : 'Study Tasks'}
+            </button>
             {messages.length > 0 && (
               <button
                 className="reset-chat-btn"
@@ -461,6 +522,18 @@ export default function App() {
 
         {/* Content Area: Welcome Center Screen OR Chat Thread */}
         <div className="main-content-scroll">
+          {tasksOpen && (
+            <section className="task-panel" aria-label="Study tasks">
+              <TaskForm onCreate={handleCreateTask} />
+              <TaskList
+                tasks={tasks}
+                loading={tasksLoading}
+                onUpdate={handleUpdateTask}
+                onDelete={handleDeleteTask}
+              />
+            </section>
+          )}
+
           {messages.length === 0 ? (
             <div className="welcome-center">
               <div className="hero-emblem-badge">

@@ -182,3 +182,67 @@ GET    /api/health
 - Helmet, rate limiting, request-size limits, and centralized error handling are enabled.
 - Secrets and database credentials remain in environment variables.
 - Do not commit `.env` files.
+
+## Local HTTPS API Demonstration
+
+The API can be started over HTTPS with the optional `src/httpsServer.js` entry point. This uses the same Express application and routes as the normal server.
+
+### Generate a local certificate
+
+Install `mkcert`, then run these commands from the `server` directory:
+
+```powershell
+mkcert -install
+mkdir certs
+mkcert -key-file certs/localhost-key.pem -cert-file certs/localhost.pem localhost 127.0.0.1 ::1
+```
+
+Add these development-only variables to `server/.env`:
+
+```env
+HTTPS_PORT=3443
+HTTPS_KEY_PATH=certs/localhost-key.pem
+HTTPS_CERT_PATH=certs/localhost.pem
+FRONTEND_ORIGIN=https://localhost:5173
+```
+
+Start the HTTPS API:
+
+```powershell
+cd e:\UPangAssist-V2-main\server
+npm run dev:https
+```
+
+The API is then available at:
+
+```text
+https://localhost:3443/api/health
+```
+
+Test it with PowerShell while retaining the authentication cookie:
+
+```powershell
+$session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
+
+$body = @{
+    name = "HTTPS Test Student"
+    email = "httpsstudent@phinma.ed"
+    course = "BS Information Technology"
+    password = "StudentPassword123!"
+    confirmPassword = "StudentPassword123!"
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+    -Uri "https://localhost:3443/api/auth/register" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $body `
+    -WebSession $session
+
+Invoke-RestMethod `
+    -Uri "https://localhost:3443/api/auth/me" `
+    -Method GET `
+    -WebSession $session
+```
+
+For a self-signed development certificate, PowerShell may require certificate validation to be trusted through `mkcert`. Do not use `-SkipCertificateCheck` in production. Production should use a certificate issued by a trusted certificate authority, set `secure: true` on cookies, and serve both the frontend and API through HTTPS.
